@@ -1,5 +1,5 @@
 {
-  "port": <PROXY_PORT>,
+  "port": "<PROXY_PORT>",
   "host": "0.0.0.0",
   "gemini_bl": "<BACKEND_VERSION>",
   "auth_user": null,
