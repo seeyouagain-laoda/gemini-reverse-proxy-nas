@@ -6,6 +6,16 @@
 
 ---
 
+## 0.1 生产部署现状（2026-08-26 校正，必读）
+
+本文档是**通用化部署指南**。就作者实际部署而言，当前状态如下，供读者校准预期：
+
+- **文字对话反代：稳定可用。** 生产后端已切到 Go 重写版 **`ikhsan3adi/gemini-web2api`**（Docker，监听 `8090`），比下文 Python 参考实现更稳（原生无空 200、上游失败自动重试、可连续多次工具调用）。Python 版 `cyberanrhy/gemini-claude-web2api` 仍可作为参考实现。
+- **图片生成经反代：当前基本不可用。** Google 对图像生成强制要求**住宅 / 白名单 ASN 出口**，而数据中心 IP（Oracle 等）一律被拦截。实测订阅内全部美国节点均为数据中心 IP，生图统一返回「您所在的地区尚未开通图片创建功能」。除非换到住宅 ASN 出口，否则**反代生图无解**。
+- **生图的可靠路径：浏览器方案。** 直接用配套项目 **gemini-browser-image-gen** —— Agent 通过带调试端口、已登录的 Chrome 直接驱动网页端生图，复用本机被 Google 认可的住宅出口，天然绕开数据中心 IP 限制。两条路径互补：反代管「API 化对话/集成」，浏览器方案管「保真生图」。
+
+---
+
 ## 0. 它能解决什么
 
 - 像调用 OpenAI 一样调用 Gemini 网页端（基于 cookie 登录态），**无需 Google API Key**。
@@ -80,13 +90,15 @@ gemini.google.com	TRUE	/	FALSE	<EXP>	__Secure-1PSIDTS	<PSID_VALUE>
 
 ### 3.1 推荐的上游项目
 
-GitHub 上 Gemini 网页→API 方案中，推荐 **`cyberanrhy/gemini-claude-web2api`**：
+GitHub 上 Gemini 网页→API 方案中，推荐 **`cyberanrhy/gemini-claude-web2api`**（Python 参考实现）：
 
 - cookie 认证、OpenAI 兼容；
 - `proxy` 字段原生支持（指定出网代理）；
 - 纯 Python，适合无显示器的 NAS。
 
 > 也可替换为任意等价的网页端反代项目，只要对外暴露 OpenAI 兼容的 `/v1/chat/completions` 即可。
+>
+> **生产更推荐 Go 重写版 `ikhsan3adi/gemini-web2api`**（Docker 镜像 `ghcr.io/ikhsan3adi/gemini-web2api`）：性能与健壮性更好（流式更快、原生无空 200、上游失败自动重试、可连续多次工具调用），cookie 烤进镜像、命令行参数即可启动（`--port 8090 --proxy http://127.0.0.1:<PROXY_OUT_PORT>`），更适合 7×24 运行。作者实际部署即采用此版本（见 §0.1）。
 
 ---
 
@@ -304,14 +316,15 @@ curl -sk https://<YOUR_DOMAIN>:<NGINX_PORT>/v1/chat/completions \
 
 ## 9. 图片生成
 
-- 网页端对话与生图是否可用，**取决于 §4 的出口 IP 是否被 Google 认可**。
+- 网页端对话与生图是否可用，**取决于 §4 的出口 IP 是否被 Google 认可**。其中**图像生成对出口 IP 的要求远高于对话**：即便对话能通，数据中心 IP（Oracle 等）也几乎必然被 Google 排除在生图白名单外。
 - 若生图返回「您所在的地区尚未开通图片创建功能」或类似提示，按三步排查：
-  1. **出口 IP** 是否为受认可地区 / 住宅 ISP 类型（数据中心 IP 会被排除）；
+  1. **出口 IP** 是否为受认可地区 / **住宅 ISP 类型**（数据中心 IP 会被排除，这是绝大多数机场订阅的硬伤）；
   2. **cookie** 是否完整、未降级为 Guest 访客态；
   3. 反代是否完整返回图片 URL（部分项目需补丁递归提取 `lh3.googleusercontent.com` 真实地址，而非占位符）。
+- **当前现实（2026-08-26）**：以数据中心 IP 为主的订阅，**反代生图基本无解**。作者实测订阅内全部美国节点均为数据中心 ASN，生图统一被拦截。要让反代生图，唯一出路是换/补一个**住宅 ASN 出口节点**（当前订阅不提供），或走付费官方 Gemini API key。
 - **更稳的生图路径（推荐）**：用配套项目 **gemini-browser-image-gen** —— Agent 通过带调试端口、已登录的 Chrome 直接驱动 Gemini 网页端生图并输出文件。该路径复用你本机**被 Google 认可的住宅出口**，天然绕开数据中心 IP 限制，且自带登录校验、内容拦截识别、成图识别与结构化输出。
 
-> 两条路径互补：反代适合“API 化”的对话/集成；浏览器方案适合“保真生图”与无法拿到住宅出口的 NAS 场景。
+> 两条路径互补：反代适合“API 化”的对话/集成；浏览器方案适合“保真生图”与无法拿到住宅出口的 NAS 场景。若你也在用反代跑 Agent 任务（工具调用），注意 Gemini 模型对工具执行是**概率性**的（同一任务这次执行、下次可能拒绝），稳定干活建议用 DeepSeek / QilinAI 等真 API。
 
 ---
 
