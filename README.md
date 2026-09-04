@@ -382,3 +382,31 @@ curl -sk https://<YOUR_DOMAIN>:<NGINX_PORT>/v1/chat/completions \
 
 - **本项目**：Gemini 网页端反代 + 局域网接入（对话 / 图片生成 API 化）。
 - **gemini-browser-image-gen**：Agent 通过可调试的 Chrome（CDP）直接驱动 Gemini 网页端生成图片并输出文件。当 NAS 出口受限、生图被地区限制时，该方案复用本机住宅出口，是最稳的生图路径。
+
+---
+
+## 14. Perplexity（pplx-proxy）反代（合并自 reverse-proxy-guide）
+
+> 来源说明：本节由 `reverse-proxy-guide` 仓库合并而来（2026-09-04 仓库整理），补齐 Gemini 之外的 Perplexity 反代要点，避免重复建仓。
+
+`pplx-proxy` 把 Perplexity API 反代成一个本地 OpenAI 兼容端点，并做模型别名管理。
+
+- **容器**：`pplx-proxy`（主），历史上曾挂 `flaresolverr` 解 Cloudflare 挑战。
+- ⚠️ **状态覆盖（2026-08 起）**：`flaresolverr` 已**移除/停用**——它会和反代 `/health` 形成死循环、疯狂烧 CPU。当前 EMPTY/挑战类排查直接走 `/health` 配额 + slug 核验，勿重新启用该容器。
+- **模型别名**：维护一份别名表（如 `sonar` / `gpt-5.5-terra` 等），健康检查应打 `/v1/models`（而非硬编码），否则订阅更新会覆盖配置。
+- **健康检查**：`GET /health` 返回配额/状态；`GET /v1/models` 列出可用模型。
+
+客户端接入（脱敏）：
+
+```
+Base URL: http://<NAS-LAN-IP>:<PPLX_PORT>/v1
+API Key:  <YOUR_PPLX_KEY>
+模型:     <ALIAS_NAME>
+```
+
+常见翻车点（与 Gemini 反代通用）：
+
+- 双 nginx 冲突：fnOS 自带 nginx 与反代 nginx 抢 80/443，需错开或反向代理串接。
+- fnOS nginx 崩溃：改配置后偶发崩溃，需重启 fnOS 网络栈。
+- 证书不信任：换 Let's Encrypt 后客户端仍不信任 → 清客户端证书缓存 / 确认链完整。
+- 手机流量连不上：走公网域名时若被运营商拦，兜底用 Tailscale（见 `tailscale-mesh-guide`）。
