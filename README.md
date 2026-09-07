@@ -1,3 +1,17 @@
+# ⛔ 本方案已过时（DEPRECATED）——请使用新方案
+
+> **本仓库的 gemini-web2api 网页逆向方案已不再推荐使用。**
+>
+> 旧方案硬伤：匿名模式限流狠、Pro 模型静默降级、TLS 指纹被风控、TTFB 高达 6.6–44.9s、Cookie 需手工维护。
+>
+> **✅ 新方案请移步：[antigravity-manager-gemini-relay](https://github.com/seeyouagain-laoda/antigravity-manager-gemini-relay)**
+>
+> 新方案基于 [Antigravity-Manager](https://github.com/lbjlaq/Antigravity-Manager)（OAuth 免 Cookie + 官方 API 直连 + 多账号池自愈），
+> 实测对话 **1.9–4.5s**，且同时白嫖 **Gemini 3.7/3.8 全系 + 生图 + Claude Opus 4.6**。
+> 本仓库仅作历史记录保留，Stop maintenance / 不再维护。
+
+---
+
 # Gemini 网页端反代 · 局域网可调用（对话 / API 化）
 
 > 把 Google Gemini **网页端**转成 OpenAI 兼容 API，跑在 NAS / 自建服务器上，供 ChatBox、手机、WorkBuddy 以及各类 Agent 应用在局域网内调用。
