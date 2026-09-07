@@ -1,3 +1,10 @@
+> [!IMPORTANT]
+> ### 📦 本仓库已整合迁移至全新架构仓库：[`infra-ai-gateway`](https://github.com/seeyouagain-laoda/infra-ai-gateway)
+> 本仓库已归档并合并入统一架构体系。最新维护版本、流式超时调优与多协议适配请前往：
+> 👉 **[infra-ai-gateway / 01-gemini-reverse-proxy](https://github.com/seeyouagain-laoda/infra-ai-gateway/tree/main/01-gemini-reverse-proxy)**
+
+---
+
 # ⛔ 本方案已过时（DEPRECATED）——请使用新方案
 
 > **本仓库的 gemini-web2api 网页逆向方案已不再推荐使用。**
